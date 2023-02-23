@@ -1,6 +1,5 @@
-use async_std::io::stdout;
-use log::logger;
 use trillium::Conn;
+
 use trillium_async_std::{config, Stopper};
 use trillium_conn_id::log_formatter::conn_id;
 
@@ -14,8 +13,10 @@ use std::io::Error;
 use async_std::prelude::*;
 use async_std::task;
 
-//use async_log::{instrument, span};
 use log::info;
+
+mod handlers;
+use handlers::v1::echo::Echo;
 
 // golang version: https://github.com/treywelsh/fizzbuzz
 
@@ -48,20 +49,19 @@ async fn server() -> Result<(), Error> {
 
     //Logger::new().with_formatter(apache_common(conn_id, "-"));
 
+    let handler = Echo {
+        //logger: Logger::new(),
+    };
     config()
         .with_host("localhost")
         .with_port(8080)
         .with_stopper(stopper)
         .run_async((
             Logger::new().with_formatter(apache_common(conn_id, "-")),
-            |conn: Conn| async move {
-                info!("coucou");
-                conn.ok("hello async-std\n")
-            },
+            handler,
         ))
         .await;
 
-    //stopper.stop()
     // Terminate the signal stream.
     handle.close();
     signals_task.await;
