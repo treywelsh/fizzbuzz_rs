@@ -7,6 +7,7 @@ use signal_hook::consts::signal::*;
 use signal_hook_async_std::Signals;
 use trillium_logger::apache_common;
 use trillium_logger::Logger;
+use trillium_router::Router;
 
 use std::io::Error;
 
@@ -52,13 +53,18 @@ async fn server() -> Result<(), Error> {
     let handler = Echo {
         //logger: Logger::new(),
     };
+
+    let router = Router::new()
+        .get("/v1/", handler)
+        .get("/v1/echo", |conn: Conn| async move { conn.ok("coucou") });
+
     config()
         .with_host("localhost")
         .with_port(8080)
         .with_stopper(stopper)
         .run_async((
             Logger::new().with_formatter(apache_common(conn_id, "-")),
-            handler,
+            router,
         ))
         .await;
 
