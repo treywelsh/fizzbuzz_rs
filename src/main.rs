@@ -14,10 +14,8 @@ use std::io::Error;
 use async_std::prelude::*;
 use async_std::task;
 
-use log::info;
-
 mod handlers;
-use handlers::v1::echo::Echo;
+use handlers::v1::FizzBuzz;
 
 // golang version: https://github.com/treywelsh/fizzbuzz
 
@@ -48,15 +46,11 @@ async fn server() -> Result<(), Error> {
 
     // Execute your main program logic
 
-    //Logger::new().with_formatter(apache_common(conn_id, "-"));
-
-    let handler = Echo {
-        //logger: Logger::new(),
-    };
+    let handler = FizzBuzz {};
 
     let router = Router::new()
-        .get("/v1/", handler)
-        .get("/v1/echo", |conn: Conn| async move { conn.ok("coucou") });
+        .get("/v1/fb", handler)
+        .get("/v1/health", |conn: Conn| async move { conn.ok("coucou") });
 
     config()
         .with_host("localhost")
