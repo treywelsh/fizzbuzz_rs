@@ -1,3 +1,4 @@
+use async_std::sync::Mutex;
 use trillium::Conn;
 
 use trillium_async_std::{config, Stopper};
@@ -9,12 +10,13 @@ use trillium_logger::apache_common;
 use trillium_logger::Logger;
 use trillium_router::Router;
 
-use std::io::Error;
-
 use async_std::prelude::*;
 use async_std::task;
 
+use std::io::Error;
+
 mod handlers;
+use handlers::reqlimit::Limiter;
 use handlers::v1::FizzBuzz;
 
 // golang version: https://github.com/treywelsh/fizzbuzz
@@ -48,14 +50,18 @@ async fn server() -> Result<(), Error> {
 
     let handler = FizzBuzz {};
 
+    // per IP request limiter
+    let limiter = Limiter::new();
+
     let router = Router::new()
-        .get("/v1/fb", handler)
+        .get("/v1/fb", (limiter, handler))
         .get("/v1/health", |conn: Conn| async move { conn.ok("coucou") });
 
     config()
         .with_host("localhost")
         .with_port(8080)
         .with_stopper(stopper)
+        .with_max_connections(Some(2))
         .run_async((
             Logger::new().with_formatter(apache_common(conn_id, "-")),
             router,
