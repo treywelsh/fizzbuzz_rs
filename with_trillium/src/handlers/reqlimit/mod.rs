@@ -1,25 +1,27 @@
-use std::{
-    collections::HashMap,
-    net::{IpAddr, Ipv4Addr},
-    num::NonZeroUsize,
-    sync::Mutex,
-    time::Duration,
-};
+use std::{net::IpAddr, num::NonZeroUsize, sync::Mutex};
 
 use lru::LruCache;
 
 use ratelimit::Ratelimiter;
 use trillium::{Conn, Handler, Status};
 
+use self::config::Bucket;
+
+pub mod config;
+
 // keeps an LRU set
 pub struct Limiter {
+    bucket_conf: Bucket,
     addrs_set: Mutex<LruCache<IpAddr, Ratelimiter>>,
 }
 
 impl Limiter {
-    pub fn new() -> Self {
+    pub fn new(config: config::IPCache) -> Self {
         Limiter {
-            addrs_set: Mutex::new(LruCache::new(NonZeroUsize::new(2).unwrap())),
+            bucket_conf: config.limiter,
+            addrs_set: Mutex::new(LruCache::new(
+                NonZeroUsize::new(config.cache_capacity).unwrap(),
+            )),
         }
     }
 }
@@ -39,7 +41,11 @@ impl Handler for Limiter {
                     got_token = true;
                 }
             } else {
-                let limiter = Ratelimiter::new(1, 1, 1);
+                let limiter = Ratelimiter::new(
+                    self.bucket_conf.capacity,
+                    self.bucket_conf.quantum,
+                    self.bucket_conf.rate,
+                );
                 if limiter.try_wait().is_ok() {
                     got_token = true;
                 }

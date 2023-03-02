@@ -1,0 +1,14 @@
+ip = "127.0.0.1"
+port = 8080
+max_conn = 1000
+
+[requests]
+cache_capacity = 500
+
+[requests.limiter]
+# bucket of capacity tokens
+capacity = 10
+# quantum tokens will be added
+# to the bucket at rate time per second
+quantum = 10
+rate = 1
