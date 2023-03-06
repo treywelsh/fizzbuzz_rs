@@ -21,6 +21,7 @@ use handlers::v1::FizzBuzz;
 use crate::config::Config;
 
 mod config;
+mod errors;
 
 async fn handle_signals(mut signals: Signals, server: Stopper) {
     while let Some(signal) = signals.next().await {
@@ -92,10 +93,18 @@ fn main() {
         )
         .get_matches();
 
-    let cfg = match matches.value_of("config") {
-        Some(path) => config::read(path),
-        None => Config::default(),
-    };
+    let cfg: Config;
+    if let Some(path) = matches.value_of("config") {
+        cfg = match config::read(path) {
+            Ok(cfg) => cfg,
+            Err(e) => {
+                log::error!("failed to read the configuration file: {}", e);
+                return;
+            }
+        }
+    } else {
+        cfg = Config::default()
+    }
 
     let task = task::spawn(server(cfg));
     log::info!("server start\n");
