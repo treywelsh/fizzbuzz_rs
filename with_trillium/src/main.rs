@@ -55,16 +55,24 @@ async fn server(cfg: config::Config) -> Result<(), Error> {
     let router: Router;
     if let Some(limiter) = cfg.requests {
         let limiter = Limiter::new(limiter);
+        log::info!("limiter: {:?}", limiter);
+
         router = Router::new().get("/v1/fb", (limiter, handler));
     } else {
         router = Router::new().get("/v1/fb", handler);
     }
 
-    config()
-        .with_host("localhost")
-        .with_port(8080)
+    let mut server_config = config()
+        .with_host(&cfg.ip)
+        .with_port(cfg.port)
         .with_stopper(stopper)
-        .with_max_connections(cfg.max_conn)
+        .without_signals();
+
+    if cfg.max_conn.is_some() {
+        server_config = server_config.with_max_connections(cfg.max_conn);
+    }
+
+    server_config
         .run_async((
             Logger::new().with_formatter(apache_common(conn_id, "-")),
             router,
@@ -105,6 +113,7 @@ fn main() {
     } else {
         cfg = Config::default()
     }
+    log::info!("configuration: {:?}", cfg);
 
     let task = task::spawn(server(cfg));
     log::info!("server start\n");

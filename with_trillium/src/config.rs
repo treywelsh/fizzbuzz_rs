@@ -1,4 +1,5 @@
-use serde::Deserialize;
+use serde::de::{Error, Unexpected};
+use serde::{Deserialize, Deserializer};
 use std::fs;
 
 use crate::errors::Errors;
@@ -8,13 +9,35 @@ use crate::handlers::reqlimit::config::{Bucket, IPCache};
 pub struct Config {
     pub ip: String,
     pub port: u16,
+    #[serde(deserialize_with = "validate_max_conn")]
     pub max_conn: Option<usize>,
     pub requests: Option<IPCache>,
 }
 
-impl Config {
-    pub fn default() -> Self {
-        Config {
+fn validate_max_conn<'de, D>(d: D) -> Result<Option<usize>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let opt = Option::<usize>::deserialize(d)?;
+
+    match opt {
+        Some(value) => {
+            if value < 2 {
+                return Err(Error::invalid_value(
+                    Unexpected::Unsigned(value as u64),
+                    &"a value at least 2",
+                ));
+            }
+        }
+        None => {}
+    }
+
+    Ok(opt)
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
             ip: "127.0.0.1".to_owned(),
             port: 8080,
             max_conn: Some(1000),
@@ -22,8 +45,8 @@ impl Config {
                 cache_capacity: 500,
                 limiter: Bucket {
                     capacity: 10,
-                    quantum: 10,
-                    rate: 1,
+                    quantum: 1,
+                    rate: 10,
                 },
             }),
         }
@@ -43,7 +66,6 @@ pub fn read(path: &str) -> Result<Config, Errors> {
             return Err(e.into());
         }
     };
-    log::debug!("configuration: {:?}", config);
 
     Ok(config)
 }
