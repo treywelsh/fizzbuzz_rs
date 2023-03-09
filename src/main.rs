@@ -1,14 +1,15 @@
+use async_std::prelude::*;
+use async_std::task;
+
 use trillium_async_std::{config, Stopper};
 use trillium_conn_id::log_formatter::conn_id;
-
-use signal_hook::consts::signal::*;
-use signal_hook_async_std::Signals;
 use trillium_logger::apache_common;
 use trillium_logger::Logger;
 use trillium_router::Router;
+use trillium_rustls::RustlsAcceptor;
 
-use async_std::prelude::*;
-use async_std::task;
+use signal_hook::consts::signal::*;
+use signal_hook_async_std::Signals;
 
 use std::io::Error;
 
@@ -69,7 +70,16 @@ async fn server(cfg: config::Config) -> Result<(), Error> {
         .without_signals();
 
     if cfg.max_conn.is_some() {
+        log::info!("update max_conn: {:?}", cfg.max_conn);
+
         server_config = server_config.with_max_connections(cfg.max_conn);
+    }
+
+    if let Some(tls) = cfg.tls {
+        server_config = server_config.with_acceptor(RustlsAcceptor::from_single_cert(
+            tls.cert.as_bytes(),
+            tls.key.as_bytes(),
+        ));
     }
 
     server_config

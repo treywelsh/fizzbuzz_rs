@@ -46,6 +46,7 @@ impl Handler for FizzBuzz {
                 }
             };
         let json = serde_json::to_string(&res).unwrap();
+        async_std::task::sleep(core::time::Duration::from_secs(30)).await;
         conn.ok(json)
     }
 }
