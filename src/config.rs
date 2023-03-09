@@ -12,6 +12,13 @@ pub struct Config {
     #[serde(deserialize_with = "validate_max_conn")]
     pub max_conn: Option<usize>,
     pub requests: Option<IPCache>,
+    pub tls: Option<TLS>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TLS {
+    pub cert: String,
+    pub key: String,
 }
 
 fn validate_max_conn<'de, D>(d: D) -> Result<Option<usize>, D::Error>
@@ -49,6 +56,7 @@ impl Default for Config {
                     rate: 10,
                 },
             }),
+            tls: None,
         }
     }
 }

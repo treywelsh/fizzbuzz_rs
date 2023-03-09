@@ -10,6 +10,7 @@ use self::config::Bucket;
 pub mod config;
 
 // keeps an LRU set
+#[derive(Debug)]
 pub struct Limiter {
     bucket_conf: Bucket,
     addrs_set: Mutex<LruCache<IpAddr, Ratelimiter>>,
@@ -41,6 +42,8 @@ impl Handler for Limiter {
                     got_token = true;
                 }
             } else {
+                log::info!("limiter self.bucket_conf: {:?}", self.bucket_conf);
+
                 let limiter = Ratelimiter::new(
                     self.bucket_conf.capacity,
                     self.bucket_conf.quantum,
