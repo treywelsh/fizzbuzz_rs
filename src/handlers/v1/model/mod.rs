@@ -29,7 +29,7 @@ pub fn fizzbuzz(
         if i % i2 == 0 {
             tmp.push(str2.clone());
         }
-        if tmp.len() == 0 {
+        if tmp.is_empty() {
             res.push(format!("{}", i));
         } else {
             res.extend(tmp);

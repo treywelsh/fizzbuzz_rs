@@ -12,11 +12,11 @@ pub struct Config {
     #[serde(deserialize_with = "validate_max_conn")]
     pub max_conn: Option<usize>,
     pub requests: Option<IPCache>,
-    pub tls: Option<TLS>,
+    pub tls: Option<Tls>,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct TLS {
+pub struct Tls {
     pub cert: String,
     pub key: String,
 }
@@ -27,16 +27,13 @@ where
 {
     let opt = Option::<usize>::deserialize(d)?;
 
-    match opt {
-        Some(value) => {
-            if value < 2 {
-                return Err(Error::invalid_value(
-                    Unexpected::Unsigned(value as u64),
-                    &"a value at least 2",
-                ));
-            }
+    if let Some(value) = opt {
+        if value < 2 {
+            return Err(Error::invalid_value(
+                Unexpected::Unsigned(value as u64),
+                &"a value at least 2",
+            ));
         }
-        None => {}
     }
 
     Ok(opt)

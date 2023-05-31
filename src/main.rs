@@ -1,6 +1,7 @@
 use async_std::prelude::*;
 use async_std::task;
 
+use log::error;
 use trillium_async_std::{config, Stopper};
 use trillium_conn_id::log_formatter::conn_id;
 use trillium_logger::apache_common;
@@ -12,6 +13,7 @@ use signal_hook::consts::signal::*;
 use signal_hook_async_std::Signals;
 
 use std::io::Error;
+use std::process::exit;
 
 use clap::{App, Arg};
 
@@ -43,7 +45,7 @@ async fn handle_signals(mut signals: Signals, server: Stopper) {
 }
 
 async fn server(cfg: config::Config) -> Result<(), Error> {
-    let signals = Signals::new(&[SIGHUP, SIGTERM, SIGINT, SIGQUIT])?;
+    let signals = Signals::new([SIGHUP, SIGTERM, SIGINT, SIGQUIT])?;
     let handle = signals.handle();
     let stopper = Stopper::new();
 
@@ -130,5 +132,8 @@ fn main() {
 
     let task = task::spawn(server(cfg));
     log::info!("server start\n");
-    task::block_on(task);
+    if let Err(e) = task::block_on(task) {
+        error!("task error: {}", e);
+        exit(1);
+    }
 }

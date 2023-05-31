@@ -41,21 +41,21 @@ where
 
     if cfg.capacity < 1 {
         return Err(Error::invalid_value(
-            Unexpected::Unsigned(cfg.capacity as u64),
+            Unexpected::Unsigned(cfg.capacity),
             &"a value at least 1 for bucket capacity",
         ));
     }
 
     if cfg.quantum < 1 {
         return Err(Error::invalid_value(
-            Unexpected::Unsigned(cfg.capacity as u64),
+            Unexpected::Unsigned(cfg.capacity),
             &"a value at least 1 for quantum",
         ));
     }
 
     if cfg.rate < 1 {
         return Err(Error::invalid_value(
-            Unexpected::Unsigned(cfg.capacity as u64),
+            Unexpected::Unsigned(cfg.capacity),
             &"a value at least 1 for rate",
         ));
     }
