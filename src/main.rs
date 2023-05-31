@@ -75,19 +75,22 @@ async fn server(cfg: config::Config) -> Result<(), Error> {
         server_config = server_config.with_max_connections(cfg.max_conn);
     }
 
-    if let Some(tls) = cfg.tls {
-        server_config = server_config.with_acceptor(RustlsAcceptor::from_single_cert(
-            tls.cert.as_bytes(),
-            tls.key.as_bytes(),
-        ));
-    }
+    let app = (
+        Logger::new().with_formatter(apache_common(conn_id, "-")),
+        router,
+    );
 
-    server_config
-        .run_async((
-            Logger::new().with_formatter(apache_common(conn_id, "-")),
-            router,
-        ))
-        .await;
+    if let Some(tls) = cfg.tls {
+        server_config
+            .with_acceptor(RustlsAcceptor::from_single_cert(
+                tls.cert.as_bytes(),
+                tls.key.as_bytes(),
+            ))
+            .run_async(app)
+            .await;
+    } else {
+        server_config.run_async(app).await;
+    }
 
     // Terminate the signal stream.
     handle.close();
